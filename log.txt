@@ -1,0 +1,17 @@
+[server] listening on 0.0.0.0:9000                                                
+[server] olo joined from ('127.0.0.1', 63416)
+[server] anna joined from ('127.0.0.1', 63423)
+[server] ('127.0.0.1', 63423) connection reset
+[server] anna removed
+[server] olo disconnected (recv returned None)
+[server] olo removed
+
+Anna's side: 
+olo: Hello
+TEXT Hi
+LIST
+
+[users] anna, olo
+QUIT
+
+[client] server closed connection
