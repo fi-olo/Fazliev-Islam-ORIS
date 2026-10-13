@@ -1,0 +1,189 @@
+import sys
+
+from PyQt6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QTextEdit,
+    QRadioButton,
+    QCheckBox,
+    QPushButton,
+    QListWidget,
+    QComboBox,
+)
+
+
+class TaskManagerWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Task Manager")
+        self.resize(600, 700)
+
+        self.tasks = []
+
+        central = QWidget()
+        self.setCentralWidget(central)
+
+        main_layout = QVBoxLayout(central)
+
+        main_layout.addWidget(QLabel("Task"))
+        self.title_input = QLineEdit()
+        self.title_input.setPlaceholderText("Enter task title")
+        main_layout.addWidget(self.title_input)
+
+        main_layout.addWidget(QLabel("Description"))
+        self.description_input = QTextEdit()
+        self.description_input.setPlaceholderText("Enter task description")
+        main_layout.addWidget(self.description_input)
+
+        main_layout.addWidget(QLabel("Priority"))
+        priority_layout = QHBoxLayout()
+
+        self.priority_low = QRadioButton("Low")
+        self.priority_medium = QRadioButton("Medium")
+        self.priority_high = QRadioButton("High")
+        self.priority_medium.setChecked(True)
+
+        priority_layout.addWidget(self.priority_low)
+        priority_layout.addWidget(self.priority_medium)
+        priority_layout.addWidget(self.priority_high)
+
+        main_layout.addLayout(priority_layout)
+
+        main_layout.addWidget(QLabel("Additional options"))
+
+        self.option_important = QCheckBox("Important")
+        self.option_notify = QCheckBox("Send notification")
+        self.option_favorite = QCheckBox("Add to favorites")
+
+        main_layout.addWidget(self.option_important)
+        main_layout.addWidget(self.option_notify)
+        main_layout.addWidget(self.option_favorite)
+
+        buttons_layout = QHBoxLayout()
+
+        self.create_button = QPushButton("Create task")
+        self.clear_button = QPushButton("Clear")
+        self.delete_button = QPushButton("Delete last task")
+
+        self.create_button.clicked.connect(self.create_task)
+        self.clear_button.clicked.connect(self.clear_form)
+        self.delete_button.clicked.connect(self.delete_last_task)
+
+        buttons_layout.addWidget(self.create_button)
+        buttons_layout.addWidget(self.clear_button)
+        buttons_layout.addWidget(self.delete_button)
+
+        main_layout.addLayout(buttons_layout)
+
+        filter_layout = QHBoxLayout()
+        filter_layout.addWidget(QLabel("Filter:"))
+
+        self.filter_combo = QComboBox()
+        self.filter_combo.addItems(["All", "Low", "Medium", "High"])
+        self.filter_combo.currentTextChanged.connect(self.update_list)
+
+        filter_layout.addWidget(self.filter_combo)
+        filter_layout.addStretch()
+
+        self.counter_label = QLabel("Created tasks: 0")
+        filter_layout.addWidget(self.counter_label)
+
+        main_layout.addLayout(filter_layout)
+
+        self.tasks_list = QListWidget()
+        main_layout.addWidget(self.tasks_list)
+
+        self.status_label = QLabel("Status: Ready")
+        main_layout.addWidget(self.status_label)
+
+    def get_priority(self):
+        if self.priority_low.isChecked():
+            return "Low"
+        if self.priority_high.isChecked():
+            return "High"
+        return "Medium"
+
+    def create_task(self):
+        title = self.title_input.text().strip()
+
+        if title == "":
+            self.status_label.setText("Status: Enter task title")
+            return
+
+        task = {
+            "title": title,
+            "description": self.description_input.toPlainText().strip(),
+            "priority": self.get_priority(),
+            "important": self.option_important.isChecked(),
+            "notify": self.option_notify.isChecked(),
+            "favorite": self.option_favorite.isChecked(),
+        }
+
+        self.tasks.append(task)
+
+        print(task)
+
+        self.update_list()
+        self.update_counter()
+        self.status_label.setText("Status: Task created")
+
+    def clear_form(self):
+        self.title_input.clear()
+        self.description_input.clear()
+        self.priority_medium.setChecked(True)
+        self.option_important.setChecked(False)
+        self.option_notify.setChecked(False)
+        self.option_favorite.setChecked(False)
+        self.status_label.setText("Status: Ready")
+
+    def delete_last_task(self):
+        if len(self.tasks) == 0:
+            self.status_label.setText("Status: No tasks")
+            return
+
+        self.tasks.pop()
+        self.update_list()
+        self.update_counter()
+        self.status_label.setText("Status: Task deleted")
+
+    def update_list(self):
+        self.tasks_list.clear()
+
+        selected = self.filter_combo.currentText()
+
+        for i in range(len(self.tasks)):
+            task = self.tasks[i]
+
+            if selected != "All" and task["priority"] != selected:
+                continue
+
+            text = f"{i + 1}. [{task['priority']}] {task['title']}"
+
+            if task["important"]:
+                text += " (Important)"
+            if task["notify"]:
+                text += " (Notify)"
+            if task["favorite"]:
+                text += " (Favorite)"
+
+            self.tasks_list.addItem(text)
+
+    def update_counter(self):
+        self.counter_label.setText(f"Created tasks: {len(self.tasks)}")
+
+
+def main():
+    app = QApplication(sys.argv)
+    window = TaskManagerWindow()
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
