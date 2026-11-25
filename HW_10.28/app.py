@@ -6,9 +6,6 @@ from flask import Flask, jsonify, request, abort
 
 app = Flask(__name__)
 
-notes = []
-note_ids = itertools.count(1)
-
 STORAGE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "notes.json")
 
 _MOCK_AUTHORS = ["alice", "islam", "carl", "dave", "eve"]
@@ -25,13 +22,6 @@ _MOCK_TEXTS = [
     "home",
 ]
 
-for i in range(25):
-    notes.append({
-        "id": next(note_ids),
-        "author": _MOCK_AUTHORS[i % len(_MOCK_AUTHORS)],
-        "text": f"{_MOCK_TEXTS[i % len(_MOCK_TEXTS)]} (#{i + 1})",
-        "likes": 0,
-    })
 
 def _seed_notes():
     return [
@@ -44,28 +34,40 @@ def _seed_notes():
         for i in range(25)
     ]
 
-def load_notes():
-    if os.path.exists(STORAGE_FILE):
-        with open(STORAGE_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data
-    data = _seed_notes()
-    save_notes(data)
-    return data
-
 
 def save_notes(data):
     with open(STORAGE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def load_notes():
+    if os.path.exists(STORAGE_FILE):
+        with open(STORAGE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    data = _seed_notes()
+    save_notes(data)
+    return data
+
+
 notes = load_notes()
 note_ids = itertools.count(max((n["id"] for n in notes), default=0) + 1)
 
 
-
 def find_note(note_id):
     return next((n for n in notes if n["id"] == note_id), None)
+
+
+def _validate_note_payload(data):
+    if not isinstance(data, dict):
+        return None, None
+    author = data.get("author")
+    text = data.get("text")
+    if not isinstance(author, str) or not author.strip():
+        return None, None
+    if not isinstance(text, str) or not text.strip():
+        return None, None
+    return author.strip(), text.strip()
+
 
 @app.get("/")
 def index():
@@ -75,34 +77,48 @@ def index():
 @app.post("/notes")
 def create_note():
     data = request.get_json(silent=True)
-    if not isinstance(data, dict) or not isinstance(data.get("author"), str) or not data["author"].strip():
-        if not isinstance(data.get("text"), str) or not data["text"].strip():
-            return jsonify(error="field 'text' or 'author' (non-empty string) is required"), 400
-    note = {"id": next(note_ids), "author": data["author"].strip(), "text": data["text"].strip(), "likes": 0}
+    author, text = _validate_note_payload(data)
+    if author is None:
+        return jsonify(error="fields 'author' and 'text' (non-empty strings) are required"), 400
+
+    note = {
+        "id": next(note_ids),
+        "author": author,
+        "text": text,
+        "likes": 0,
+    }
     notes.append(note)
+    save_notes(notes)
     return jsonify(note), 201
 
+
 @app.get("/notes")
-def get_notes(): 
+def get_notes():
     author = request.args.get("author")
+
     limit_raw = request.args.get("limit", "10")
     try:
         limit = int(limit_raw)
     except ValueError:
-        return jsonify(f"limit должен быть числом, получено '{limit_raw}'"), 400
+        return jsonify(error=f"limit должен быть числом, получено '{limit_raw}'"), 400
     if not (1 <= limit <= 100):
-        return jsonify("limit должен быть между 1 and 100"), 400
+        return jsonify(error="limit должен быть между 1 and 100"), 400
 
     offset_raw = request.args.get("offset", "0")
     try:
         offset = int(offset_raw)
     except ValueError:
-        return jsonify(f"offset должен быть числом, получен:'{offset_raw}'"), 400
+        return jsonify(error=f"offset должен быть числом, получен: '{offset_raw}'"), 400
     if offset < 0:
-        return jsonify("offset должен быть >= 0"), 400
+        return jsonify(error="offset должен быть >= 0"), 400
 
     sort = request.args.get("sort", "id")
+    if sort not in ("id", "likes"):
+        return jsonify(error="sort должен быть 'id' или 'likes'"), 400
+
     order = request.args.get("order", "asc")
+    if order not in ("asc", "desc"):
+        return jsonify(error="order должен быть 'asc' или 'desc'"), 400
 
     filtered = notes
     if author is not None:
@@ -120,6 +136,7 @@ def get_notes():
         "offset": offset,
     })
 
+
 @app.get("/notes/<int:note_id>")
 def get_note(note_id):
     note = find_note(note_id)
@@ -127,25 +144,27 @@ def get_note(note_id):
         abort(404)
     return jsonify(note)
 
+
 @app.put("/notes/<int:note_id>")
-def put_note(note_id): 
-    data = request.get_json(silent=True)
+def put_note(note_id):
     note = find_note(note_id)
     if note is None:
-            abort(404)
-    if  not isinstance(data, dict) or not isinstance(data["author"], str) or not data["author"].strip(): 
-        if not isinstance(data.get("text"), str) or not data["text"].strip():
-            return jsonify(error="field 'text' or 'author' (non-empty string) is required"), 400
-    note["author"] = data["author"].strip()
-    note["text"] = data["text"].strip()
-    response_text = f"Товар с id {note_id} успешно обновлен."
+        abort(404)
+
+    data = request.get_json(silent=True)
+    author, text = _validate_note_payload(data)
+    if author is None:
+        return jsonify(error="fields 'author' and 'text' (non-empty strings) are required"), 400
+
+    note["author"] = author
+    note["text"] = text
+    save_notes(notes)
+
     return {
-        "message": response_text,
-        "updated_fields": {
-            "author": data["author"],
-            "text": data["text"]
-        }
+        "message": f"Заметка с id {note_id} успешно обновлена.",
+        "updated_fields": {"author": author, "text": text},
     }, 200
+
 
 @app.delete("/notes/<int:note_id>")
 def delete_note(note_id):
@@ -153,7 +172,9 @@ def delete_note(note_id):
     if note is None:
         abort(404)
     notes.remove(note)
+    save_notes(notes)
     return "", 204
+
 
 @app.post("/notes/<int:note_id>/like")
 def like_note(note_id):
@@ -163,6 +184,7 @@ def like_note(note_id):
     note["likes"] = note.get("likes", 0) + 1
     save_notes(notes)
     return jsonify(note), 200
+
 
 @app.get("/authors")
 def get_authors():
@@ -177,8 +199,11 @@ def get_authors():
     result = sorted(stats.values(), key=lambda x: x["author"])
     return jsonify(result)
 
+
 @app.delete("/notes")
 def delete_notes_by_author():
+    global notes
+
     author = request.args.get("author")
     if author is None or not author.strip():
         return jsonify(error="query parameter 'author' is required and must be non-empty"), 400
@@ -192,13 +217,16 @@ def delete_notes_by_author():
 
     return jsonify(deleted=deleted), 200
 
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify(error="not found"), 404
 
+
 @app.errorhandler(405)
 def method_not_allowed(error):
     return jsonify(error="method not allowed"), 405
+
 
 if __name__ == "__main__":
     app.run(debug=True)
