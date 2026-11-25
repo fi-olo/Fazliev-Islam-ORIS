@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
         username = self.username_input.text().strip() or "Аноним"
 
         self.send_thread.send({
-            "type": "system",
+            "type": "chat",
             "username": username,
             "text": text,
         })

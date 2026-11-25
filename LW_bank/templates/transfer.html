@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Transfer — Bank{% endblock %}
+
+{% block content %}
+<h2>Переводы между аккаунтами</h2>
+
+{% if errors %}
+    <ul class="error">
+        {% for e in errors %}
+            <li>{{ e }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<form action="{{ url_for('transfer') }}" method="POST">
+    <label>От кого:
+        <select name="from_id">
+            <option value="">Выбрать</option>
+            {% for a in accounts %}
+                <option value="{{ a.id }}" {% if from_id == a.id|string %}selected{% endif %}>
+                    {{ a.holder }} ({{ a.balance }} ₽)
+                </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>Кому:
+        <select name="to_id">
+            <option value="">Выбрать</option>
+            {% for a in accounts %}
+                <option value="{{ a.id }}" {% if to_id == a.id|string %}selected{% endif %}>
+                    {{ a.holder }}
+                </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>Сумма:
+        <input type="number" name="amount" step="0.01" min="0.01"
+               value="{{ amount|default('') }}">
+    </label>
+
+    <button type="submit">Перевести</button>
+</form>
+
+<p><a href="{{ url_for('index') }}">Обратно ко всем аккаунтам</a></p>
+{% endblock %}

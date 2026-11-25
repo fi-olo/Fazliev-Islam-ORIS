@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Open Account — Bank{% endblock %}
+
+{% block content %}
+<h2>Зарегестрировать новый аккаунт</h2>
+
+{% if errors %}
+    <ul class="error">
+        {% for e in errors %}
+            <li>{{ e }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<form action="{{ url_for('add_account') }}" method="POST">
+    <label>Имя:
+        <input type="text" name="holder" value="{{ holder|default('') }}">
+    </label>
+
+    <label>Номер карты:
+        <input type="text" name="card" value="{{ card|default('') }}">
+    </label>
+
+    <label>Баланс:
+        <input type="number" name="balance" step="0.01" value="{{ balance|default('0') }}">
+    </label>
+
+    <button type="submit">Создать аккаунт</button>
+</form>
+
+<p><a href="{{ url_for('index') }}">Обратно ко всеи аккаунтам</a></p>
+{% endblock %}

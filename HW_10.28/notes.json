@@ -1,0 +1,170 @@
+[
+  {
+    "id": 1,
+    "author": "alice",
+    "text": "hi! (#1)",
+    "likes": 0
+  },
+  {
+    "id": 2,
+    "author": "islam",
+    "text": "123 (#2)",
+    "likes": 0
+  },
+  {
+    "id": 3,
+    "author": "carl",
+    "text": "hello (#3)",
+    "likes": 0
+  },
+  {
+    "id": 4,
+    "author": "dave",
+    "text": "dfsdfsdf (#4)",
+    "likes": 0
+  },
+  {
+    "id": 5,
+    "author": "eve",
+    "text": "sdfzxvzxc (#5)",
+    "likes": 0
+  },
+  {
+    "id": 6,
+    "author": "alice",
+    "text": "124234234 (#6)",
+    "likes": 0
+  },
+  {
+    "id": 7,
+    "author": "islam",
+    "text": "work (#7)",
+    "likes": 0
+  },
+  {
+    "id": 8,
+    "author": "carl",
+    "text": "7473854 (#8)",
+    "likes": 0
+  },
+  {
+    "id": 9,
+    "author": "dave",
+    "text": "lesson (#9)",
+    "likes": 0
+  },
+  {
+    "id": 10,
+    "author": "eve",
+    "text": "home (#10)",
+    "likes": 0
+  },
+  {
+    "id": 11,
+    "author": "alice",
+    "text": "hi! (#11)",
+    "likes": 0
+  },
+  {
+    "id": 12,
+    "author": "islam",
+    "text": "123 (#12)",
+    "likes": 0
+  },
+  {
+    "id": 13,
+    "author": "carl",
+    "text": "hello (#13)",
+    "likes": 0
+  },
+  {
+    "id": 14,
+    "author": "dave",
+    "text": "dfsdfsdf (#14)",
+    "likes": 0
+  },
+  {
+    "id": 15,
+    "author": "eve",
+    "text": "sdfzxvzxc (#15)",
+    "likes": 0
+  },
+  {
+    "id": 16,
+    "author": "alice",
+    "text": "124234234 (#16)",
+    "likes": 0
+  },
+  {
+    "id": 17,
+    "author": "islam",
+    "text": "work (#17)",
+    "likes": 0
+  },
+  {
+    "id": 18,
+    "author": "carl",
+    "text": "7473854 (#18)",
+    "likes": 0
+  },
+  {
+    "id": 19,
+    "author": "dave",
+    "text": "lesson (#19)",
+    "likes": 0
+  },
+  {
+    "id": 20,
+    "author": "eve",
+    "text": "home (#20)",
+    "likes": 0
+  },
+  {
+    "id": 21,
+    "author": "alice",
+    "text": "hi! (#21)",
+    "likes": 0
+  },
+  {
+    "id": 22,
+    "author": "islam",
+    "text": "123 (#22)",
+    "likes": 0
+  },
+  {
+    "id": 23,
+    "author": "carl",
+    "text": "hello (#23)",
+    "likes": 0
+  },
+  {
+    "id": 24,
+    "author": "dave",
+    "text": "dfsdfsdf (#24)",
+    "likes": 0
+  },
+  {
+    "id": 25,
+    "author": "eve",
+    "text": "sdfzxvzxc (#25)",
+    "likes": 0
+  },
+  {
+    "id": 27,
+    "author": "",
+    "text": "x",
+    "likes": 0
+  },
+  {
+    "id": 28,
+    "author": "ivan",
+    "text": "привет из клиента",
+    "likes": 3
+  },
+  {
+    "id": 29,
+    "author": "",
+    "text": "x",
+    "likes": 0
+  }
+]

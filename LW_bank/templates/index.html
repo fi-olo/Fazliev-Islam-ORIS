@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Home — Bank{% endblock %}
+
+{% block content %}
+<h2>Все аккаунты</h2>
+
+{% if accounts %}
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Имя</th>
+            <th>Карта</th>
+            <th>Баланс</th>
+            <th>Action</th>
+        </tr>
+        {% for a in accounts %}
+            <tr>
+                <td>{{ a.id }}</td>
+                <td>{{ a.holder }}</td>
+                <td>{{ a.card }}</td>
+                <td>
+                    {% if a.balance > 0 %}
+                        {{ a.balance }} ₽
+                    {% else %}
+                        <strong>Empty</strong>
+                    {% endif %}
+                </td>
+                <td><a href="{{ url_for('detail', account_id=a.id) }}">Открыть</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No accounts yet.</p>
+{% endif %}
+{% endblock %}
