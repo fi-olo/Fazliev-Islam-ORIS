@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ account.holder }} — Bank{% endblock %}
+
+{% block content %}
+<h2>аккаунт: {{ account.holder }}</h2>
+<p>Карта: <strong>{{ account.card }}</strong></p>
+<p>Баланс: <strong>{{ account.balance }} ₽</strong></p>
+
+<h3>History</h3>
+{% if account.history %}
+    <table>
+        <tr>
+            <th>Тип</th>
+            <th>Сумма</th>
+            <th>Коментарий</th>
+        </tr>
+        {% for h in account.history %}
+            <tr>
+                <td>{{ h.type }}</td>
+                <td>
+                    {% if h.amount >= 0 %}
+                        <span style="color: green;">+{{ "%.2f"|format(h.amount) }} ₽</span>
+                    {% else %}
+                        <span style="color: red;">{{ "%.2f"|format(h.amount) }} ₽</span>
+                    {% endif %}
+                </td>
+                <td>{{ h.comment }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No transactions yet.</p>
+{% endif %}
+<p>
+    <a href="{{ url_for('edit_account', account_id=account.id) }}">Редактировать</a>
+</p>
+<p>
+    <a href="{{ url_for('transfer') }}">Перевести с этого аккаунта</a>
+</p>
+<p>
+    <a href="{{ url_for('index') }}">Обратно ко всем аккаунтам</a>
+</p>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Home — Bank{% endblock %}
+
+{% block content %}
+
+<form method="get" action="{{ url_for('index') }}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Поиск по имени или карте">
+    <button type="submit">Найти</button>
+    {% if query %}
+        <a href="{{ url_for('index') }}">Сбросить</a>
+    {% endif %}
+</form>
+
+<p>
+    Сортировка:
+    <a href="{{ url_for('index', q=query, sort='balance') }}">по балансу ↑</a> |
+    <a href="{{ url_for('index', q=query, sort='balance_desc') }}">по балансу ↓</a> |
+    <a href="{{ url_for('index', q=query, sort='holder') }}">по имени</a>
+</p>
+
+<h2>Все аккаунты</h2>
+
+{% if accounts %}
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Имя</th>
+            <th>Карта</th>
+            <th>Баланс</th>
+            <th>Action</th>
+        </tr>
+        {% for a in accounts %}
+            <tr>
+                <td>{{ a.id }}</td>
+                <td>{{ a.holder }}</td>
+                <td>{{ a.card }}</td>
+                <td>
+                    {% if a.balance > 0 %}
+                        {{ a.balance }} ₽
+                    {% else %}
+                        <strong>Empty</strong>
+                    {% endif %}
+                </td>
+                <td><a href="{{ url_for('detail', account_id=a.id) }}">Открыть</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No accounts yet.</p>
+{% endif %}
+{% endblock %}
