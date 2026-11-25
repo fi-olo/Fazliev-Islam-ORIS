@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Stats — Bank{% endblock %}
+
+{% block content %}
+<h2>Статистика по аккаунтам</h2>
+
+<table>
+    <tr><th>Показатель</th><th>Значение</th></tr>
+    <tr><td>Количество аккаунтов</td><td>{{ count }}</td></tr>
+    <tr><td>Общий баланс</td><td>{{ "%.2f"|format(total) }} ₽</td></tr>
+    <tr><td>Средний баланс</td><td>{{ "%.2f"|format(avg) }} ₽</td></tr>
+    {% if max_acc %}
+    <tr><td>Максимальный баланс</td><td>{{ max_acc.holder }} — {{ "%.2f"|format(max_acc.balance) }} ₽</td></tr>
+    {% endif %}
+    {% if min_acc %}
+    <tr><td>Минимальный баланс</td><td>{{ min_acc.holder }} — {{ "%.2f"|format(min_acc.balance) }} ₽</td></tr>
+    {% endif %}
+</table>
+
+<h3>Топ-3 по балансу</h3>
+<ol>
+    {% for a in top %}
+        <li>{{ a.holder }} — {{ "%.2f"|format(a.balance) }} ₽</li>
+    {% endfor %}
+</ol>
+
+<p><a href="{{ url_for('index') }}">Обратно ко всем аккаунтам</a></p>
+{% endblock %}

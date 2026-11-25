@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort
 
 app = Flask(__name__)
 
@@ -35,22 +35,71 @@ accounts = [
 ]
 
 
+def find_account(account_id):
+    for item in accounts:
+        if item["id"] == account_id:
+            return item
+    return None
+
+
+def validate_account_form(holder, card, balance_raw):
+    errors = []
+    balance = 0.0
+
+    if not holder:
+        errors.append("Имя владельца обязательно")
+
+    if not card:
+        errors.append("Номер карты обязателен")
+
+    if balance_raw:
+        try:
+            balance = float(balance_raw)
+            if balance < 0:
+                errors.append("Баланс не может быть отрицательным")
+        except ValueError:
+            errors.append("Баланс должен быть числом")
+            balance = 0.0
+    else:
+        errors.append("Баланс обязателен")
+
+    return errors, balance
+
+
 @app.route("/")
 def index():
-    return render_template("index.html", accounts=accounts)
+    query = request.args.get("q", "").strip()
+    sort_by = request.args.get("sort", "")
+
+    result = accounts
+
+    if query:
+        q_lower = query.lower()
+        result = [
+            a for a in result
+            if q_lower in a["holder"].lower() or q_lower in a["card"].lower()
+        ]
+
+    if sort_by == "balance":
+        result = sorted(result, key=lambda a: a["balance"])
+    elif sort_by == "balance_desc":
+        result = sorted(result, key=lambda a: a["balance"], reverse=True)
+    elif sort_by == "holder":
+        result = sorted(result, key=lambda a: a["holder"].lower())
+
+    return render_template(
+        "index.html",
+        accounts=result,
+        query=query,
+        sort_by=sort_by,
+    )
 
 
 @app.route("/accounts/<int:account_id>")
 def detail(account_id):
-    account = None
-    for item in accounts:
-        if item["id"] == account_id:
-            account = item
-            break
-
+    account = find_account(account_id)
     if account is None:
-        return "Account not found", 404
-
+        abort(404)
     return render_template("detail.html", account=account)
 
 
@@ -61,22 +110,7 @@ def add_account():
         card = request.form.get("card", "").strip()
         balance_raw = request.form.get("balance", "").strip()
 
-        errors = []
-
-        if not holder:
-            errors.append("Имя владельца обязательно")
-
-        if not card:
-            errors.append("Номер карты обязателен")
-
-        balance = 0.0
-        if balance_raw:
-            try:
-                balance = float(balance_raw)
-                if balance < 0:
-                    errors.append("Баланс не может быть отрицательным")
-            except ValueError:
-                errors.append("Баланс должен быть числом")
+        errors, balance = validate_account_form(holder, card, balance_raw)
 
         if errors:
             return render_template(
@@ -87,79 +121,107 @@ def add_account():
                 balance=balance_raw,
             )
 
-        new_account = {
-            "id": len(accounts) + 1,
+        new_id = max((a["id"] for a in accounts), default=0) + 1
+        accounts.append({
+            "id": new_id,
             "holder": holder,
             "card": card,
             "balance": balance,
             "history": [],
-        }
-
-        accounts.append(new_account)
+        })
         return redirect(url_for("index"))
 
     return render_template("add.html")
 
-@app.route('/tranfer', methods = ["GET", "POST"])
-def transfer(): 
-    if request.method == "POST": 
+
+@app.route("/accounts/<int:account_id>/edit", methods=["GET", "POST"])
+def edit_account(account_id):
+    account = find_account(account_id)
+    if account is None:
+        abort(404)
+
+    if request.method == "POST":
+        holder = request.form.get("holder", "").strip()
+        card = request.form.get("card", "").strip()
+        balance_raw = request.form.get("balance", "").strip()
+
+        errors, balance = validate_account_form(holder, card, balance_raw)
+
+        if errors:
+            return render_template(
+                "edit.html",
+                account=account,
+                errors=errors,
+                holder=holder,
+                card=card,
+                balance=balance_raw,
+            )
+
+        account["holder"] = holder
+        account["card"] = card
+        account["balance"] = balance
+        return redirect(url_for("detail", account_id=account["id"]))
+
+    return render_template(
+        "edit.html",
+        account=account,
+        holder=account["holder"],
+        card=account["card"],
+        balance=account["balance"],
+    )
+
+
+@app.route("/transfer", methods=["GET", "POST"])
+def transfer():
+    if request.method == "POST":
         from_id = request.form.get("from_id", "").strip()
         to_id = request.form.get("to_id", "").strip()
-        amount = request.form.get("amount", )
+        amount_raw = request.form.get("amount", "").strip()
 
         errors = []
-
-        sender = None
-        receiver = None
+        sender = receiver = None
+        amount = 0.0
 
         if not from_id:
             errors.append("Счёт отправителя обязателен")
         else:
             try:
                 from_id = int(from_id)
+                sender = find_account(from_id)
+                if sender is None:
+                    errors.append("Счёт отправителя не найден")
             except ValueError:
                 errors.append("Некорректный счёт отправителя")
                 from_id = None
-
-            if from_id is not None:
-                for item in accounts:
-                    if item["id"] == from_id:
-                        sender = item
-                        break
-                if sender is None:
-                    errors.append("Счёт отправителя не найден")
 
         if not to_id:
             errors.append("Счёт получателя обязателен")
         else:
             try:
                 to_id = int(to_id)
+                receiver = find_account(to_id)
+                if receiver is None:
+                    errors.append("Счёт получателя не найден")
             except ValueError:
-                errors.append("Некорректный счёт отправителя")
+                errors.append("Некорректный счёт получателя")
                 to_id = None
 
-            if to_id is not None:
-                for item in accounts:
-                    if item["id"] == to_id:
-                        receiver = item
-                        break
-                if receiver is None:
-                    errors.append("Счёт отправителя не найден")
+        if sender and receiver and sender["id"] == receiver["id"]:
+            errors.append("Нельзя перевести на тот же счёт")
 
-
-        if not amount:
+        if not amount_raw:
             errors.append("Сумма обязательна")
         else:
             try:
-                amount = float(amount)
+                amount = float(amount_raw)
                 if amount <= 0:
                     errors.append("Сумма должна быть больше нуля")
             except ValueError:
                 errors.append("Сумма должна быть числом")
+                amount = 0.0
 
-        if sender is not None and amount > 0 and sender["balance"] < amount:
+        if sender and amount > 0 and sender["balance"] < amount:
             errors.append("Недостаточно средств на счёте отправителя")
-
 
         if errors:
             return render_template(
@@ -168,12 +230,11 @@ def transfer():
                 errors=errors,
                 from_id=from_id,
                 to_id=to_id,
-                amount=amount,
+                amount=amount_raw,
             )
 
         sender["balance"] -= amount
         receiver["balance"] += amount
-
         sender["history"].append({
             "type": "Перевод",
             "amount": -amount,
@@ -184,10 +245,36 @@ def transfer():
             "amount": amount,
             "comment": f"Перевод от {sender['holder']}",
         })
-
         return redirect(url_for("detail", account_id=sender["id"]))
 
     return render_template("transfer.html", accounts=accounts)
-        
-if __name__ == "__main__": 
+
+
+@app.route("/stats")
+def stats():
+    total = sum(a["balance"] for a in accounts)
+    count = len(accounts)
+    avg = total / count if count else 0
+    top = sorted(accounts, key=lambda a: a["balance"], reverse=True)[:3]
+
+    max_acc = max(accounts, key=lambda a: a["balance"], default=None)
+    min_acc = min(accounts, key=lambda a: a["balance"], default=None)
+
+    return render_template(
+        "stats.html",
+        count=count,
+        total=total,
+        avg=avg,
+        top=top,
+        max_acc=max_acc,
+        min_acc=min_acc,
+    )
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("404.html"), 404
+
+
+if __name__ == "__main__":
     app.run(debug=True)
